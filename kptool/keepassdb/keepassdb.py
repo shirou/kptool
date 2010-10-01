@@ -171,7 +171,7 @@ class KeepassDBv1:
       elif (m_type == 0xD):
 	entry['bin_desc'] = buf[pos:pos+size].replace('\x00','')
       elif (m_type == 0xE):
-	entry['binary'] = buf[pos:pos+size].replace('\x00','')
+	entry['binary'] = buf[pos:pos+size]
       elif (m_type == 0xFFFF): # end of a entry
 	n_entries -= 1
 	
@@ -186,9 +186,24 @@ class KeepassDBv1:
 	  entry['group_id'] = -1
 
 	if ('comment' in entry and entry['comment'] == 'KPX_GROUP_TREE_STATE'):
-	  pass # TODO
-
-	entries.append(entry)
+	  if (not 'binary' in entry or len(entry['binary']) < 4):
+	      raise ValueError, "Discarded metastream KPX_GROUP_TREE_STATE because of a parsing error."
+	  n = struct.unpack('<L', entry['binary'][:4])[0]
+	  if (n * 5 != len(entry['binary']) - 4):
+	    raise ValueError, "Discarded metastream KPX_GROUP_TREE_STATE because of a parsing binary error."
+	  else:
+	    for i in range(0,n):
+	      s = 4+i*5
+	      e = 4+i*5 + 4
+	      group_id = struct.unpack('<L', entry['binary'][s:e])[0]
+	      s = 8+i*5
+	      e = 8+i*5 + 1
+	      is_expanded = struct.unpack('B', entry['binary'][s:e])[0]
+	      for g in groups:
+		if (g['group_id'] == group_id):
+		  g['expanded'] = is_expanded
+	else:
+	  entries.append(entry)
 	entry = {}
       else:
 	entry['unknown'] = buf[pos:pos+size]

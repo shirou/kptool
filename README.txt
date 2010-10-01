@@ -65,8 +65,6 @@ get_entries()
   Get entries. 
   Note: KeepassDB has a history. get_entries() get all entries include
   history. Since that, entries that have same title may be acquired.
-  Note: "Meta-Info" entries are system infomation entries. please
-  ignored if you do not need to access system information.
 
   >>> for e in k.get_entries():
   ...   print "%s %s %s" % (e['title'], e['username'], e['created'])
@@ -74,8 +72,6 @@ get_entries()
   SubGroup1 gr 2010-10-01 22:00:29
   Entry1 test 2010-09-26 13:17:55
   日本語です sub 2010-10-01 21:59:33
-  Meta-Info SYSTEM 2010-10-01 22:01:04
-  Meta-Info SYSTEM 2010-10-01 22:01:04
 
 get_entries_from_groupid(groupid)
   Get entries from groupid. Groupid should be Integer.
@@ -83,8 +79,6 @@ get_entries_from_groupid(groupid)
   >>> for e in k.get_entries_from_groupid(2877859699):
   ...   e['title']
   'Entry1'
-  'Meta-Info'
-  'Meta-Info'
 
 find_groups(searchword)
   Find groups that has <searchword> in title or id.
