@@ -1,0 +1,25 @@
+Metadata-Version: 1.0
+Name: kptool
+Version: 0.1dev
+Summary: Keepass v1 DB tool
+Home-page: UNKNOWN
+Author: WAKAYAMA Shirou
+Author-email: shirou.faw@gmail.com
+License: GPL v2
+Description: 
+        Keepass DB managing tool
+        -------------------------------------
+        
+        This version can use Keepass v1 DB only.
+        This version can read DB only.
+        
+Keywords: security,password
+Platform: UNKNOWN
+Classifier: Development Status :: 1 - Planning
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: System Administrators
+Classifier: Intended Audience :: End Users/Desktop
+Classifier: License :: OSI Approved :: GNU General Public License (GPL)
+Classifier: Topic :: Security
+Classifier: Topic :: Utilities
