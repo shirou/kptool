@@ -16,6 +16,10 @@ tool.
 How to Use
 -------------------------
 
+Example: 
+
+::
+
   % python kptool.py <kdbfilepath>
   password required
   kptool> Ent
