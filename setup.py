@@ -9,21 +9,12 @@ sys.path.append('./tests')
 # Main setup
 #-----------------------------------------------------------------------------
 
-long_desc = \
-"""
-Keepass DB managing tool
--------------------------------------
-
-This version can use Keepass v1 DB only.
-This version can read DB only.
-"""
-
 version = '0.1'
 
 setup(name='kptool',
       version=version,
       description = "Keepass v1 DB tool",
-      long_description = long_desc, 
+      long_description = open('README.txt').read(),
       classifiers = [
         'Development Status :: 1 - Planning',
         'Environment :: Console',
