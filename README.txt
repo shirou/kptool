@@ -16,7 +16,17 @@ tool.
 How to Use
 -------------------------
 
-  % python kptool.py -f <kdbfilepath> <searchword>
+  % python kptool.py <kdbfilepath>
+  password required
+  kptool> Ent
+  Entry2:
+  pass    : entry
+  modified: 2010-10-01 22:01:02
+  Entry1:
+  url     : URL
+  pass    : testtest
+  modified: 2010-09-26 13:18:13
+  kptool> ^D
 
 -------------------------
 Building and installation
@@ -72,6 +82,7 @@ get_entries()
   SubGroup1 gr 2010-10-01 22:00:29
   Entry1 test 2010-09-26 13:17:55
   日本語です sub 2010-10-01 21:59:33
+  Meta-Info SYSTEM 2010-10-01 22:01:04
 
 get_entries_from_groupid(groupid)
   Get entries from groupid. Groupid should be Integer.
@@ -79,6 +90,7 @@ get_entries_from_groupid(groupid)
   >>> for e in k.get_entries_from_groupid(2877859699):
   ...   e['title']
   'Entry1'
+  'Meta-Info'
 
 find_groups(searchword)
   Find groups that has <searchword> in title or id.
