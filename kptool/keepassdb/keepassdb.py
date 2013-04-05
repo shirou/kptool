@@ -17,6 +17,17 @@ DB_FLAG_RIJNDAEL = 2
 DB_FLAG_ARCFOUR  = 4
 DB_FLAG_TWOFISH  = 8
 
+
+def parse_null_turminated(a_string):
+    """
+    Strips the first null byte '\x00' from the given argument and returns a
+    string/unicode object. Works on strings in python 2 and on byte strings
+    in python 3.
+    """
+    a_string = a_string.replace('\x00'.encode('utf8'), ''.encode('utf8'))
+    return a_string.decode('utf8')
+
+
 class Header:
   def __init__(self, field):
     self.sig1, self.sig2, self.flags, self.ver, self.seed_rand, self.enc_iv, self.n_groups, self.n_entries, self.checksum, self.seed_key, self.seed_rot_n = field
@@ -56,7 +67,7 @@ class KeepassDBv1:
     buf = buf[DB_HEADER_SIZE:]
 
     # create key
-    key = hashlib.sha256(masterpass).digest()
+    key = hashlib.sha256(masterpass.encode('utf8')).digest()
     self.cipher = AES.new(self.header.seed_key,  AES.MODE_ECB)
     for i in range(0, self.header.seed_rot_n):
       key = self.cipher.encrypt(key)
@@ -102,11 +113,11 @@ class KeepassDBv1:
       size = struct.unpack("<L", buf[pos:pos+4])[0]
       pos += 4
       if (pos + size) > len(buf):
-        raise ValueError("Group header offset is out of range. ($pos, $size)" )
+        raise ValueError("Group header offset is out of range. ($pos, $size)")
       if (m_type == 1):
         group['group_id'] = struct.unpack("<L", buf[pos:pos+4])[0]
       elif (m_type == 2):
-        group['title'] = buf[pos:pos+size].replace('\x00','')
+        group['title'] = parse_null_turminated(buf[pos:pos+size])
       elif (m_type == 7):
         group['icon'] = struct.unpack("<L", buf[pos:pos+4])[0]
       elif (m_type == 8):
@@ -145,21 +156,21 @@ class KeepassDBv1:
       if (pos + size) > len(buf):
         raise ValueError("Entry header offset is out of range. ($pos, $size)" )
       if (m_type == 1):
-        entry['id'] = b2a_hex(buf[pos:pos+size]).replace('\x00','')
+        entry['id'] = parse_null_turminated(b2a_hex(buf[pos:pos+size]))
       elif (m_type == 2):
         entry['group_id'] = struct.unpack('<L', buf[pos:pos+4])[0]
       elif (m_type == 3):
         entry['icon'] = struct.unpack('<L', buf[pos:pos+4])[0]
       elif (m_type == 4):
-        entry['title'] = buf[pos:pos+size].replace('\x00','')
+        entry['title'] = parse_null_turminated(buf[pos:pos+size])
       elif (m_type == 5):
-        entry['url'] = buf[pos:pos+size].replace('\x00','')
+        entry['url'] = parse_null_turminated(buf[pos:pos+size])
       elif (m_type == 6):
-        entry['username'] = buf[pos:pos+size].replace('\x00','')
+        entry['username'] = parse_null_turminated(buf[pos:pos+size])
       elif (m_type == 7):
-        entry['password'] = buf[pos:pos+size].replace('\x00','')
+        entry['password'] = parse_null_turminated(buf[pos:pos+size])
       elif (m_type == 8):
-        entry['comment'] = buf[pos:pos+size].replace('\x00','')
+        entry['comment'] = parse_null_turminated(buf[pos:pos+size])
       elif (m_type == 9):
         entry['created'] = self.parse_date(buf, pos, size)
       elif (m_type == 0xA):
@@ -169,7 +180,7 @@ class KeepassDBv1:
       elif (m_type == 0xC):
         entry['expires'] = self.parse_date(buf, pos, size)
       elif (m_type == 0xD):
-        entry['bin_desc'] = buf[pos:pos+size].replace('\x00','')
+        entry['bin_desc'] = parse_null_turminated(buf[pos:pos+size])
       elif (m_type == 0xE):
         entry['binary'] = buf[pos:pos+size]
       elif (m_type == 0xFFFF): # end of a entry
@@ -241,7 +252,12 @@ class KeepassDBv1:
   def decrypt_aes_cbc(self, buf, key, enc_iv):
     cipher = AES.new(key, AES.MODE_CBC, enc_iv)
     buf = cipher.decrypt(buf)
-    extra = ord(buf[-1])
+
+    extra = buf[-1]
+    if not isinstance(extra, int):
+        # In python 2, the crypto stuff works on strings, not byte arrays
+        extra = ord(extra)
+
     buf = buf[:len(buf)-extra] # last len(extra) becomes blank
     
     return buf
