@@ -39,18 +39,18 @@ class KeepassDBv1:
   def parse_db(self, buf, masterpass):
     self.header = self.parse_header(buf)
     if (self.header.sig1 != DB_SIG_1):
-      raise ValueError, "Invalid Signature 1"
+      raise ValueError("Invalid Signature 1")
     if (self.header.sig2 != DB_SIG_2):
-      raise ValueError, "Invalid Signature 2"
+      raise ValueError("Invalid Signature 2")
     if (self.header.ver & 0xFFFFFF00 != DB_VER_DW & 0xFFFFFF00):
-      raise ValueError, "Unsupported File Version"
+      raise ValueError("Unsupported File Version")
 
     if (self.header.flags & DB_FLAG_RIJNDAEL):
       self.enc_type = 'rijndael'
     elif (self.header.flags & DB_FLAG_TWOFISH):
       self.enc_type = 'twofish'
     else:
-      raise ValueError, "Unknown Encryption Algorithm."
+      raise ValueError("Unknown Encryption Algorithm.")
 
     # remove header from buffer
     buf = buf[DB_HEADER_SIZE:]
@@ -70,10 +70,10 @@ class KeepassDBv1:
       crypto_size = len(buf)
 
     if ((crypto_size > 2147483446) or (not crypto_size and self.header.n_groups)):
-      raise ValueError, "Decryption failed.\nThe key is wrong or the file is damaged"
+      raise ValueError("Decryption failed.\nThe key is wrong or the file is damaged")
 
     if self.header.checksum != hashlib.sha256(buf).digest():
-      raise ValueError, "Decryption failed. The file checksum did not match."
+      raise ValueError("Decryption failed. The file checksum did not match.")
 
     # parse and create groups and entries
     self.groups = []
@@ -98,11 +98,11 @@ class KeepassDBv1:
       m_type = struct.unpack("<H", buf[pos:pos+2])[0]
       pos += 2
       if pos >= len(buf):
-        raise ValueError, "Group header offset is out of range. ($pos)"
+        raise ValueError("Group header offset is out of range. ($pos)")
       size = struct.unpack("<L", buf[pos:pos+4])[0]
       pos += 4
       if (pos + size) > len(buf):
-        raise ValueError, "Group header offset is out of range. ($pos, $size)" 
+        raise ValueError("Group header offset is out of range. ($pos, $size)" )
       if (m_type == 1):
         group['group_id'] = struct.unpack("<L", buf[pos:pos+4])[0]
       elif (m_type == 2):
@@ -139,11 +139,11 @@ class KeepassDBv1:
       m_type = struct.unpack("<H", buf[pos:pos+2])[0]
       pos += 2;
       if pos >= len(buf):
-        raise ValueError, "Entry header offset is out of range. ($pos)"
+        raise ValueError("Entry header offset is out of range. ($pos)")
       size = struct.unpack('<L', buf[pos:pos+4])[0]
       pos += 4
       if (pos + size) > len(buf):
-        raise ValueError, "Entry header offset is out of range. ($pos, $size)" 
+        raise ValueError("Entry header offset is out of range. ($pos, $size)" )
       if (m_type == 1):
         entry['id'] = b2a_hex(buf[pos:pos+size]).replace('\x00','')
       elif (m_type == 2):
@@ -187,10 +187,10 @@ class KeepassDBv1:
 
         if ('comment' in entry and entry['comment'] == 'KPX_GROUP_TREE_STATE'):
           if (not 'binary' in entry or len(entry['binary']) < 4):
-              raise ValueError, "Discarded metastream KPX_GROUP_TREE_STATE because of a parsing error."
+              raise ValueError("Discarded metastream KPX_GROUP_TREE_STATE because of a parsing error.")
           n = struct.unpack('<L', entry['binary'][:4])[0]
           if (n * 5 != len(entry['binary']) - 4):
-            raise ValueError, "Discarded metastream KPX_GROUP_TREE_STATE because of a parsing binary error."
+            raise ValueError("Discarded metastream KPX_GROUP_TREE_STATE because of a parsing binary error.")
           else:
             for i in range(0,n):
               s = 4+i*5
@@ -231,7 +231,7 @@ class KeepassDBv1:
   def parse_header(self, buf):
     size = len(buf)
     if (size < DB_HEADER_SIZE):
-      raise ValueError, "file size is too small"
+      raise ValueError("file size is too small")
 
     format = '<L L L L 16s 16s L L 32s 32s L'
     # sig1 sig2 flags ver seed_rand enc_iv n_groups n_entries checksum seed_key seed_rot_n);
@@ -258,7 +258,7 @@ class KeepassDBv1:
 
   def lock(self):
     if (self.lock == True):
-      raise ValueError, "already locked"
+      raise ValueError("already locked")
     self.lock = True
   
   def unlock(self):
@@ -316,7 +316,7 @@ if __name__ == '__main__':
   password = "Hogehoge"
   k = Keepassv1("keepass-test.kdb",password)
 
-  # print k.groups
-  #  print k.entries
-  print k.find_groups(title="Group1")
-  print k.find_entries("Entry1")
+  # print(k.groups)
+  #  print(k.entries)
+  print(k.find_groups(title="Group1"))
+  print(k.find_entries("Entry1"))
