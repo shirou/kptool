@@ -11,6 +11,11 @@ sys.path.append('./tests')
 
 version = '0.1'
 
+deps = ['pycrypto']
+
+if sys.version_info < (2,7):
+    deps.append('argparse')
+
 setup(name='kptool',
       version=version,
       description = "Keepass v1 DB tool",
@@ -33,10 +38,7 @@ setup(name='kptool',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
       include_package_data=True,
       zip_safe=False,
-      install_requires=[
-          'argparse', 'pycrypto'
-          # -*- Extra requirements: -*-
-      ],
+      install_requires=deps,
       entry_points="""
       # -*- Entry points: -*-
       """,
