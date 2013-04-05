@@ -98,36 +98,36 @@ class KeepassDBv1:
       m_type = struct.unpack("<H", buf[pos:pos+2])[0]
       pos += 2
       if pos >= len(buf):
-	raise ValueError, "Group header offset is out of range. ($pos)"
+        raise ValueError, "Group header offset is out of range. ($pos)"
       size = struct.unpack("<L", buf[pos:pos+4])[0]
       pos += 4
       if (pos + size) > len(buf):
-	raise ValueError, "Group header offset is out of range. ($pos, $size)" 
+        raise ValueError, "Group header offset is out of range. ($pos, $size)" 
       if (m_type == 1):
-	group['group_id'] = struct.unpack("<L", buf[pos:pos+4])[0]
+        group['group_id'] = struct.unpack("<L", buf[pos:pos+4])[0]
       elif (m_type == 2):
-	group['title'] = buf[pos:pos+size].replace('\x00','')
+        group['title'] = buf[pos:pos+size].replace('\x00','')
       elif (m_type == 7):
-	group['icon'] = struct.unpack("<L", buf[pos:pos+4])[0]
+        group['icon'] = struct.unpack("<L", buf[pos:pos+4])[0]
       elif (m_type == 8):
-	group['level'] = struct.unpack("<H", buf[pos:pos+2])[0]
+        group['level'] = struct.unpack("<H", buf[pos:pos+2])[0]
       elif (m_type == 0xFFFF): # end of a group
-	n_groups -= 1
-	if ('level' in group):
-	  level = group['level']
-	else:
-	  level = 0
-	if (previous_level < level):
-	  if (self.is_group_exists(groups, previous_groupid)):
-	    group['groups'] = previous_groupid
-	  
-	previous_level = level
-	previous_groupid = int(group['group_id'])
-	groups.append(group)
-	group = {}
+        n_groups -= 1
+        if ('level' in group):
+          level = group['level']
+        else:
+          level = 0
+        if (previous_level < level):
+          if (self.is_group_exists(groups, previous_groupid)):
+            group['groups'] = previous_groupid
+          
+        previous_level = level
+        previous_groupid = int(group['group_id'])
+        groups.append(group)
+        group = {}
       else:
-	group['unknown'] = buf[pos:pos+size]
-	
+        group['unknown'] = buf[pos:pos+size]
+        
       pos += size;
 
     return groups, pos
@@ -139,75 +139,75 @@ class KeepassDBv1:
       m_type = struct.unpack("<H", buf[pos:pos+2])[0]
       pos += 2;
       if pos >= len(buf):
-	raise ValueError, "Entry header offset is out of range. ($pos)"
+        raise ValueError, "Entry header offset is out of range. ($pos)"
       size = struct.unpack('<L', buf[pos:pos+4])[0]
       pos += 4
       if (pos + size) > len(buf):
-	raise ValueError, "Entry header offset is out of range. ($pos, $size)" 
+        raise ValueError, "Entry header offset is out of range. ($pos, $size)" 
       if (m_type == 1):
-	entry['id'] = b2a_hex(buf[pos:pos+size]).replace('\x00','')
+        entry['id'] = b2a_hex(buf[pos:pos+size]).replace('\x00','')
       elif (m_type == 2):
-	entry['group_id'] = struct.unpack('<L', buf[pos:pos+4])[0]
+        entry['group_id'] = struct.unpack('<L', buf[pos:pos+4])[0]
       elif (m_type == 3):
-	entry['icon'] = struct.unpack('<L', buf[pos:pos+4])[0]
+        entry['icon'] = struct.unpack('<L', buf[pos:pos+4])[0]
       elif (m_type == 4):
-	entry['title'] = buf[pos:pos+size].replace('\x00','')
+        entry['title'] = buf[pos:pos+size].replace('\x00','')
       elif (m_type == 5):
-	entry['url'] = buf[pos:pos+size].replace('\x00','')
+        entry['url'] = buf[pos:pos+size].replace('\x00','')
       elif (m_type == 6):
-	entry['username'] = buf[pos:pos+size].replace('\x00','')
+        entry['username'] = buf[pos:pos+size].replace('\x00','')
       elif (m_type == 7):
-	entry['password'] = buf[pos:pos+size].replace('\x00','')
+        entry['password'] = buf[pos:pos+size].replace('\x00','')
       elif (m_type == 8):
-	entry['comment'] = buf[pos:pos+size].replace('\x00','')
+        entry['comment'] = buf[pos:pos+size].replace('\x00','')
       elif (m_type == 9):
-	entry['created'] = self.parse_date(buf, pos, size)
+        entry['created'] = self.parse_date(buf, pos, size)
       elif (m_type == 0xA):
-	entry['modified'] = self.parse_date(buf, pos, size)
+        entry['modified'] = self.parse_date(buf, pos, size)
       elif (m_type == 0xB):
-	entry['accessed'] = self.parse_date(buf, pos, size)
+        entry['accessed'] = self.parse_date(buf, pos, size)
       elif (m_type == 0xC):
-	entry['expires'] = self.parse_date(buf, pos, size)
+        entry['expires'] = self.parse_date(buf, pos, size)
       elif (m_type == 0xD):
-	entry['bin_desc'] = buf[pos:pos+size].replace('\x00','')
+        entry['bin_desc'] = buf[pos:pos+size].replace('\x00','')
       elif (m_type == 0xE):
-	entry['binary'] = buf[pos:pos+size]
+        entry['binary'] = buf[pos:pos+size]
       elif (m_type == 0xFFFF): # end of a entry
-	n_entries -= 1
-	
-	# orphaned nodes go into the special group
-	if not self.is_group_exists(groups, entry['group_id']):
-	  if (not self.is_group_exists(groups, -1)):
-	    group = {}
-	    group['group_id'] = -1
-	    group['title'] = "*Orphaned*"
-	    group['icon']  = 0
-	    groups.append(group)
-	  entry['group_id'] = -1
+        n_entries -= 1
+        
+        # orphaned nodes go into the special group
+        if not self.is_group_exists(groups, entry['group_id']):
+          if (not self.is_group_exists(groups, -1)):
+            group = {}
+            group['group_id'] = -1
+            group['title'] = "*Orphaned*"
+            group['icon']  = 0
+            groups.append(group)
+          entry['group_id'] = -1
 
-	if ('comment' in entry and entry['comment'] == 'KPX_GROUP_TREE_STATE'):
-	  if (not 'binary' in entry or len(entry['binary']) < 4):
-	      raise ValueError, "Discarded metastream KPX_GROUP_TREE_STATE because of a parsing error."
-	  n = struct.unpack('<L', entry['binary'][:4])[0]
-	  if (n * 5 != len(entry['binary']) - 4):
-	    raise ValueError, "Discarded metastream KPX_GROUP_TREE_STATE because of a parsing binary error."
-	  else:
-	    for i in range(0,n):
-	      s = 4+i*5
-	      e = 4+i*5 + 4
-	      group_id = struct.unpack('<L', entry['binary'][s:e])[0]
-	      s = 8+i*5
-	      e = 8+i*5 + 1
-	      is_expanded = struct.unpack('B', entry['binary'][s:e])[0]
-	      for g in groups:
-		if (g['group_id'] == group_id):
-		  g['expanded'] = is_expanded
-	else:
-	  entries.append(entry)
-	entry = {}
+        if ('comment' in entry and entry['comment'] == 'KPX_GROUP_TREE_STATE'):
+          if (not 'binary' in entry or len(entry['binary']) < 4):
+              raise ValueError, "Discarded metastream KPX_GROUP_TREE_STATE because of a parsing error."
+          n = struct.unpack('<L', entry['binary'][:4])[0]
+          if (n * 5 != len(entry['binary']) - 4):
+            raise ValueError, "Discarded metastream KPX_GROUP_TREE_STATE because of a parsing binary error."
+          else:
+            for i in range(0,n):
+              s = 4+i*5
+              e = 4+i*5 + 4
+              group_id = struct.unpack('<L', entry['binary'][s:e])[0]
+              s = 8+i*5
+              e = 8+i*5 + 1
+              is_expanded = struct.unpack('B', entry['binary'][s:e])[0]
+              for g in groups:
+                if (g['group_id'] == group_id):
+                  g['expanded'] = is_expanded
+        else:
+          entries.append(entry)
+        entry = {}
       else:
-	entry['unknown'] = buf[pos:pos+size]
-	
+        entry['unknown'] = buf[pos:pos+size]
+        
       pos += size;
 
     return entries
@@ -280,7 +280,7 @@ class KeepassDBv1:
   def is_group_exists(self, groups, group_id):
     for g in groups:
       if (g['group_id'] == group_id):
-	return True
+        return True
     return False
   
   def is_group_include_word(self, group, word):

@@ -34,7 +34,7 @@ setup(
         'Intended Audience :: Developers',
         'Intended Audience :: System Administrators',
         'Intended Audience :: End Users/Desktop',
-	'License :: OSI Approved :: GNU General Public License (GPL)',
+        'License :: OSI Approved :: GNU General Public License (GPL)',
         'Topic :: Security',
         'Topic :: Utilities'
     ]

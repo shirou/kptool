@@ -14,8 +14,8 @@ from keepassdb import keepassdb
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='search entry from keepass DB')
   parser.add_argument('kdb_file',
-		      nargs=1,
-		      help = 'keepass DB file path')
+                      nargs=1,
+                      help = 'keepass DB file path')
 #  parser.add_argument('--version', action='version', version='%(prog)s 0.1')
 
   args = parser.parse_args()
@@ -44,31 +44,31 @@ if __name__ == '__main__':
     elif line == 'list':
       ent = []
       for e in k.get_entries():
-	if (e['title']) in ent:
-	  continue
-	ent.append((e['title']))
+        if (e['title']) in ent:
+          continue
+        ent.append((e['title']))
       ent.sort()
       for t in ent:
-	print("%s:" % t)
+        print("%s:" % t)
     elif line == 'groups':
       ent = []
       for e in k.get_groups():
-	if (e['title']) in ent:
-	  continue
-	ent.append((e['title']))
+        if (e['title']) in ent:
+          continue
+        ent.append((e['title']))
       ent.sort()
       for t in ent:
-	print("%s:" % t)
+        print("%s:" % t)
     else: # normal search
 #      for g in k.find_groups(line):
 #print("%s " % (g['title']))
       for e in k.find_entries(line):
-	print("%s:" % (e['title']))
-	if (len(e['url']) > 0):
-	  print("  url     : %s" % (e['url']))
-	print("  pass    : %s" % (e['password']))
-	print("  modified: %s" % (e['modified']))
-	if (e['expires'] != edate):
-	  print("  expires : %s" % (e['expires']))
+        print("%s:" % (e['title']))
+        if (len(e['url']) > 0):
+          print("  url     : %s" % (e['url']))
+        print("  pass    : %s" % (e['password']))
+        print("  modified: %s" % (e['modified']))
+        if (e['expires'] != edate):
+          print("  expires : %s" % (e['expires']))
 
   
