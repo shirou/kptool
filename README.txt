@@ -60,7 +60,7 @@ Constructor(kdbfilepath, masterpassword)
   Create DB from KeePass DB file path and Master password.
 
   >>> from kptool.keepassdb import keepassdb
-  >>> password = "Hogehoge"
+  >>> password = u"Hogehoge"
   >>> k = keepassdb.KeepassDBv1("tests/keepass-test.kdb", password)
 
 get_groups()
@@ -68,12 +68,12 @@ get_groups()
 
   >>> for g in k.get_groups():
   ...   if ('groups' in g):
-  ...     "%s %s in %s" % (g['title'], g['group_id'], g['groups'])
+  ...     print("%s %s in %s" % (g['title'], g['group_id'], g['groups']))
   ...   else:  
-  ...     "%s %s" % (g['title'], g['group_id'])
-  'Group1 2877859699'
-  'SubGroup1 1203768070 in 2877859699'
-  'Group2 2251441873'
+  ...     print("%s %s" % (g['title'], g['group_id']))
+  Group1 2877859699
+  SubGroup1 1203768070 in 2877859699
+  Group2 2251441873
 
 get_entries()
   Get entries. 
@@ -81,7 +81,7 @@ get_entries()
   history. Since that, entries that have same title may be acquired.
 
   >>> for e in k.get_entries():
-  ...   print "%s %s %s" % (e['title'], e['username'], e['created'])
+  ...   print("%s %s %s" % (e['title'], e['username'], e['created']))
   Entry2 entry2 2010-10-01 22:00:51
   SubGroup1 gr 2010-10-01 22:00:29
   Entry1 test 2010-09-26 13:17:55
@@ -92,25 +92,25 @@ get_entries_from_groupid(groupid)
   Get entries from groupid. Groupid should be Integer.
 
   >>> for e in k.get_entries_from_groupid(2877859699):
-  ...   e['title']
-  'Entry1'
-  'Meta-Info'
+  ...   print(e['title'])
+  Entry1
+  Meta-Info
 
 find_groups(searchword)
   Find groups that has <searchword> in title or id.
   
   >>> for g in k.find_groups("up1"):
-  ...   g['title']
-  'Group1'
-  'SubGroup1'
+  ...   print(g['title'])
+  Group1
+  SubGroup1
 
 find_entries(searchword)
   Find entries that has <searchword> in title, url, comment or username.
 
   >>> for e in k.find_entries("Ent"):
-  ...   e['title']
-  'Entry2'
-  'Entry1'
+  ...   print(e['title'])
+  Entry2
+  Entry1
 
 clear()
   Clears any currently loaded groups and entries in the database.

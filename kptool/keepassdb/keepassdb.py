@@ -17,6 +17,17 @@ DB_FLAG_RIJNDAEL = 2
 DB_FLAG_ARCFOUR  = 4
 DB_FLAG_TWOFISH  = 8
 
+
+def parse_null_turminated(a_string):
+    """
+    Strips the first null byte '\x00' from the given argument and returns a
+    string/unicode object. Works on strings in python 2 and on byte strings
+    in python 3.
+    """
+    a_string = a_string.replace('\x00'.encode('utf8'), ''.encode('utf8'))
+    return a_string.decode('utf8')
+
+
 class Header:
   def __init__(self, field):
     self.sig1, self.sig2, self.flags, self.ver, self.seed_rand, self.enc_iv, self.n_groups, self.n_entries, self.checksum, self.seed_key, self.seed_rot_n = field
@@ -39,24 +50,24 @@ class KeepassDBv1:
   def parse_db(self, buf, masterpass):
     self.header = self.parse_header(buf)
     if (self.header.sig1 != DB_SIG_1):
-      raise ValueError, "Invalid Signature 1"
+      raise ValueError("Invalid Signature 1")
     if (self.header.sig2 != DB_SIG_2):
-      raise ValueError, "Invalid Signature 2"
+      raise ValueError("Invalid Signature 2")
     if (self.header.ver & 0xFFFFFF00 != DB_VER_DW & 0xFFFFFF00):
-      raise ValueError, "Unsupported File Version"
+      raise ValueError("Unsupported File Version")
 
     if (self.header.flags & DB_FLAG_RIJNDAEL):
       self.enc_type = 'rijndael'
     elif (self.header.flags & DB_FLAG_TWOFISH):
       self.enc_type = 'twofish'
     else:
-      raise ValueError, "Unknown Encryption Algorithm."
+      raise ValueError("Unknown Encryption Algorithm.")
 
     # remove header from buffer
     buf = buf[DB_HEADER_SIZE:]
 
     # create key
-    key = hashlib.sha256(masterpass).digest()
+    key = hashlib.sha256(masterpass.encode('utf8')).digest()
     self.cipher = AES.new(self.header.seed_key,  AES.MODE_ECB)
     for i in range(0, self.header.seed_rot_n):
       key = self.cipher.encrypt(key)
@@ -70,10 +81,10 @@ class KeepassDBv1:
       crypto_size = len(buf)
 
     if ((crypto_size > 2147483446) or (not crypto_size and self.header.n_groups)):
-      raise ValueError, "Decryption failed.\nThe key is wrong or the file is damaged"
+      raise ValueError("Decryption failed.\nThe key is wrong or the file is damaged")
 
     if self.header.checksum != hashlib.sha256(buf).digest():
-      raise ValueError, "Decryption failed. The file checksum did not match."
+      raise ValueError("Decryption failed. The file checksum did not match.")
 
     # parse and create groups and entries
     self.groups = []
@@ -98,36 +109,36 @@ class KeepassDBv1:
       m_type = struct.unpack("<H", buf[pos:pos+2])[0]
       pos += 2
       if pos >= len(buf):
-	raise ValueError, "Group header offset is out of range. ($pos)"
+        raise ValueError("Group header offset is out of range. ($pos)")
       size = struct.unpack("<L", buf[pos:pos+4])[0]
       pos += 4
       if (pos + size) > len(buf):
-	raise ValueError, "Group header offset is out of range. ($pos, $size)" 
+        raise ValueError("Group header offset is out of range. ($pos, $size)")
       if (m_type == 1):
-	group['group_id'] = struct.unpack("<L", buf[pos:pos+4])[0]
+        group['group_id'] = struct.unpack("<L", buf[pos:pos+4])[0]
       elif (m_type == 2):
-	group['title'] = buf[pos:pos+size].replace('\x00','')
+        group['title'] = parse_null_turminated(buf[pos:pos+size])
       elif (m_type == 7):
-	group['icon'] = struct.unpack("<L", buf[pos:pos+4])[0]
+        group['icon'] = struct.unpack("<L", buf[pos:pos+4])[0]
       elif (m_type == 8):
-	group['level'] = struct.unpack("<H", buf[pos:pos+2])[0]
+        group['level'] = struct.unpack("<H", buf[pos:pos+2])[0]
       elif (m_type == 0xFFFF): # end of a group
-	n_groups -= 1
-	if ('level' in group):
-	  level = group['level']
-	else:
-	  level = 0
-	if (previous_level < level):
-	  if (self.is_group_exists(groups, previous_groupid)):
-	    group['groups'] = previous_groupid
-	  
-	previous_level = level
-	previous_groupid = int(group['group_id'])
-	groups.append(group)
-	group = {}
+        n_groups -= 1
+        if ('level' in group):
+          level = group['level']
+        else:
+          level = 0
+        if (previous_level < level):
+          if (self.is_group_exists(groups, previous_groupid)):
+            group['groups'] = previous_groupid
+          
+        previous_level = level
+        previous_groupid = int(group['group_id'])
+        groups.append(group)
+        group = {}
       else:
-	group['unknown'] = buf[pos:pos+size]
-	
+        group['unknown'] = buf[pos:pos+size]
+        
       pos += size;
 
     return groups, pos
@@ -139,75 +150,75 @@ class KeepassDBv1:
       m_type = struct.unpack("<H", buf[pos:pos+2])[0]
       pos += 2;
       if pos >= len(buf):
-	raise ValueError, "Entry header offset is out of range. ($pos)"
+        raise ValueError("Entry header offset is out of range. ($pos)")
       size = struct.unpack('<L', buf[pos:pos+4])[0]
       pos += 4
       if (pos + size) > len(buf):
-	raise ValueError, "Entry header offset is out of range. ($pos, $size)" 
+        raise ValueError("Entry header offset is out of range. ($pos, $size)" )
       if (m_type == 1):
-	entry['id'] = b2a_hex(buf[pos:pos+size]).replace('\x00','')
+        entry['id'] = parse_null_turminated(b2a_hex(buf[pos:pos+size]))
       elif (m_type == 2):
-	entry['group_id'] = struct.unpack('<L', buf[pos:pos+4])[0]
+        entry['group_id'] = struct.unpack('<L', buf[pos:pos+4])[0]
       elif (m_type == 3):
-	entry['icon'] = struct.unpack('<L', buf[pos:pos+4])[0]
+        entry['icon'] = struct.unpack('<L', buf[pos:pos+4])[0]
       elif (m_type == 4):
-	entry['title'] = buf[pos:pos+size].replace('\x00','')
+        entry['title'] = parse_null_turminated(buf[pos:pos+size])
       elif (m_type == 5):
-	entry['url'] = buf[pos:pos+size].replace('\x00','')
+        entry['url'] = parse_null_turminated(buf[pos:pos+size])
       elif (m_type == 6):
-	entry['username'] = buf[pos:pos+size].replace('\x00','')
+        entry['username'] = parse_null_turminated(buf[pos:pos+size])
       elif (m_type == 7):
-	entry['password'] = buf[pos:pos+size].replace('\x00','')
+        entry['password'] = parse_null_turminated(buf[pos:pos+size])
       elif (m_type == 8):
-	entry['comment'] = buf[pos:pos+size].replace('\x00','')
+        entry['comment'] = parse_null_turminated(buf[pos:pos+size])
       elif (m_type == 9):
-	entry['created'] = self.parse_date(buf, pos, size)
+        entry['created'] = self.parse_date(buf, pos, size)
       elif (m_type == 0xA):
-	entry['modified'] = self.parse_date(buf, pos, size)
+        entry['modified'] = self.parse_date(buf, pos, size)
       elif (m_type == 0xB):
-	entry['accessed'] = self.parse_date(buf, pos, size)
+        entry['accessed'] = self.parse_date(buf, pos, size)
       elif (m_type == 0xC):
-	entry['expires'] = self.parse_date(buf, pos, size)
+        entry['expires'] = self.parse_date(buf, pos, size)
       elif (m_type == 0xD):
-	entry['bin_desc'] = buf[pos:pos+size].replace('\x00','')
+        entry['bin_desc'] = parse_null_turminated(buf[pos:pos+size])
       elif (m_type == 0xE):
-	entry['binary'] = buf[pos:pos+size]
+        entry['binary'] = buf[pos:pos+size]
       elif (m_type == 0xFFFF): # end of a entry
-	n_entries -= 1
-	
-	# orphaned nodes go into the special group
-	if not self.is_group_exists(groups, entry['group_id']):
-	  if (not self.is_group_exists(groups, -1)):
-	    group = {}
-	    group['group_id'] = -1
-	    group['title'] = "*Orphaned*"
-	    group['icon']  = 0
-	    groups.append(group)
-	  entry['group_id'] = -1
+        n_entries -= 1
+        
+        # orphaned nodes go into the special group
+        if not self.is_group_exists(groups, entry['group_id']):
+          if (not self.is_group_exists(groups, -1)):
+            group = {}
+            group['group_id'] = -1
+            group['title'] = "*Orphaned*"
+            group['icon']  = 0
+            groups.append(group)
+          entry['group_id'] = -1
 
-	if ('comment' in entry and entry['comment'] == 'KPX_GROUP_TREE_STATE'):
-	  if (not 'binary' in entry or len(entry['binary']) < 4):
-	      raise ValueError, "Discarded metastream KPX_GROUP_TREE_STATE because of a parsing error."
-	  n = struct.unpack('<L', entry['binary'][:4])[0]
-	  if (n * 5 != len(entry['binary']) - 4):
-	    raise ValueError, "Discarded metastream KPX_GROUP_TREE_STATE because of a parsing binary error."
-	  else:
-	    for i in range(0,n):
-	      s = 4+i*5
-	      e = 4+i*5 + 4
-	      group_id = struct.unpack('<L', entry['binary'][s:e])[0]
-	      s = 8+i*5
-	      e = 8+i*5 + 1
-	      is_expanded = struct.unpack('B', entry['binary'][s:e])[0]
-	      for g in groups:
-		if (g['group_id'] == group_id):
-		  g['expanded'] = is_expanded
-	else:
-	  entries.append(entry)
-	entry = {}
+        if ('comment' in entry and entry['comment'] == 'KPX_GROUP_TREE_STATE'):
+          if (not 'binary' in entry or len(entry['binary']) < 4):
+              raise ValueError("Discarded metastream KPX_GROUP_TREE_STATE because of a parsing error.")
+          n = struct.unpack('<L', entry['binary'][:4])[0]
+          if (n * 5 != len(entry['binary']) - 4):
+            raise ValueError("Discarded metastream KPX_GROUP_TREE_STATE because of a parsing binary error.")
+          else:
+            for i in range(0,n):
+              s = 4+i*5
+              e = 4+i*5 + 4
+              group_id = struct.unpack('<L', entry['binary'][s:e])[0]
+              s = 8+i*5
+              e = 8+i*5 + 1
+              is_expanded = struct.unpack('B', entry['binary'][s:e])[0]
+              for g in groups:
+                if (g['group_id'] == group_id):
+                  g['expanded'] = is_expanded
+        else:
+          entries.append(entry)
+        entry = {}
       else:
-	entry['unknown'] = buf[pos:pos+size]
-	
+        entry['unknown'] = buf[pos:pos+size]
+        
       pos += size;
 
     return entries
@@ -231,7 +242,7 @@ class KeepassDBv1:
   def parse_header(self, buf):
     size = len(buf)
     if (size < DB_HEADER_SIZE):
-      raise ValueError, "file size is too small"
+      raise ValueError("file size is too small")
 
     format = '<L L L L 16s 16s L L 32s 32s L'
     # sig1 sig2 flags ver seed_rand enc_iv n_groups n_entries checksum seed_key seed_rot_n);
@@ -241,7 +252,12 @@ class KeepassDBv1:
   def decrypt_aes_cbc(self, buf, key, enc_iv):
     cipher = AES.new(key, AES.MODE_CBC, enc_iv)
     buf = cipher.decrypt(buf)
-    extra = ord(buf[-1])
+
+    extra = buf[-1]
+    if not isinstance(extra, int):
+        # In python 2, the crypto stuff works on strings, not byte arrays
+        extra = ord(extra)
+
     buf = buf[:len(buf)-extra] # last len(extra) becomes blank
     
     return buf
@@ -258,7 +274,7 @@ class KeepassDBv1:
 
   def lock(self):
     if (self.lock == True):
-      raise ValueError, "already locked"
+      raise ValueError("already locked")
     self.lock = True
   
   def unlock(self):
@@ -280,7 +296,7 @@ class KeepassDBv1:
   def is_group_exists(self, groups, group_id):
     for g in groups:
       if (g['group_id'] == group_id):
-	return True
+        return True
     return False
   
   def is_group_include_word(self, group, word):
@@ -316,7 +332,7 @@ if __name__ == '__main__':
   password = "Hogehoge"
   k = Keepassv1("keepass-test.kdb",password)
 
-  # print k.groups
-  #  print k.entries
-  print k.find_groups(title="Group1")
-  print k.find_entries("Entry1")
+  # print(k.groups)
+  #  print(k.entries)
+  print(k.find_groups(title="Group1"))
+  print(k.find_entries("Entry1"))
